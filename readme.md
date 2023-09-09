@@ -1,6 +1,10 @@
+**Warning this may or may not get your account banned although this is automation it should not violate their terms so grey area use with caution also I am not responsible for any damages or loss!!! 
+
+
 ** NightCafe Credit Claimer **
 
 head over to https://creator.nightcafe.studio/my-creations?claimTopup=true&n_class=topupReminder&n_medium=email
+
 and auto claim your credits using tamper monkey 
 
 [MIT](https://choosealicense.com/licenses/mit/)
