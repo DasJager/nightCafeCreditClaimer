@@ -1,0 +1,287 @@
+// ==UserScript==
+// @name         Credit Claimer
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  Claim free daily credits automatically.
+// @author       You
+// @match        https://creator.nightcafe.studio/my-creations?claimTopup=true&n_class=topupReminder&n_medium=email
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    const CLAIM_BUTTON_TEXT = 'Claim 5 credits';
+    const WAIT_TIME_HOURS = 24;
+    const REFRESH_INTERVAL = 24 * 60 * 60 * 1000;
+
+    let guiElement;
+    let overlayElement;
+    let isScriptRunning = false;
+    let debugMode = false;
+
+    function createGUIElement() {
+        guiElement = document.createElement('div');
+        guiElement.id = 'credit-claimer-gui';
+        guiElement.style.position = 'fixed';
+        guiElement.style.top = '50%';
+        guiElement.style.left = '50%';
+        guiElement.style.transform = 'translate(-50%, -50%)';
+        guiElement.style.padding = '10px';
+        guiElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        guiElement.style.color = '#fff';
+        guiElement.style.zIndex = '9999';
+        guiElement.style.fontFamily = 'Arial, sans-serif';
+        guiElement.style.fontSize = '14px';
+        guiElement.style.borderRadius = '5px';
+        guiElement.style.display = 'flex';
+        guiElement.style.flexDirection = 'column';
+        guiElement.style.alignItems = 'center';
+        guiElement.style.userSelect = 'none';
+        guiElement.style.cursor = 'move';
+        guiElement.addEventListener('mousedown', dragStart);
+
+        const textElement = document.createElement('div');
+        textElement.id = 'credit-claimer-text';
+        textElement.style.marginBottom = '10px';
+        textElement.style.textAlign = 'center';
+        guiElement.appendChild(textElement);
+
+        document.body.appendChild(guiElement);
+    }
+
+    function updateGUI(content) {
+        const textElement = document.getElementById('credit-claimer-text');
+        if (textElement) {
+            textElement.textContent = content;
+        }
+    }
+
+    function dragStart(e) {
+        const initialX = e.clientX;
+        const initialY = e.clientY;
+        const initialTop = parseInt(window.getComputedStyle(guiElement).top);
+        const initialLeft = parseInt(window.getComputedStyle(guiElement).left);
+
+        function drag(e) {
+            const currentX = e.clientX;
+            const currentY = e.clientY;
+            const offsetX = currentX - initialX;
+            const offsetY = currentY - initialY;
+
+            guiElement.style.top = `${initialTop + offsetY}px`;
+            guiElement.style.left = `${initialLeft + offsetX}px`;
+        }
+
+        function dragEnd() {
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+    }
+
+    function createOverlayElement() {
+        const claimButton = document.querySelector('button[data-is-action-button="true"] .css-30u4z5');
+        if (claimButton) {
+            overlayElement = document.createElement('div');
+            overlayElement.style.position = 'absolute';
+            overlayElement.style.top = '0';
+            overlayElement.style.left = '0';
+            overlayElement.style.width = '100%';
+            overlayElement.style.height = '100%';
+            overlayElement.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+            overlayElement.style.pointerEvents = 'none';
+            claimButton.appendChild(overlayElement);
+        }
+    }
+
+    function removeOverlayElement() {
+        if (overlayElement && overlayElement.parentNode) {
+            overlayElement.parentNode.removeChild(overlayElement);
+            overlayElement = null;
+        }
+    }
+
+    function toggleScript() {
+        if (isScriptRunning) {
+            stopScript();
+        } else {
+            startScript();
+        }
+    }
+
+    function startScript() {
+        if (isScriptRunning) {
+            return;
+        }
+
+        isScriptRunning = true;
+        updateGUI('Script is running...');
+        claimCredits();
+    }
+
+    function stopScript() {
+        isScriptRunning = false;
+        updateGUI('Script is stopped.');
+    }
+
+function toggleDebugMode() {
+    debugMode = !debugMode; // Invert the value of debugMode
+    updateGUI(`Debug mode: ${debugMode ? 'Enabled' : 'Disabled'}`);
+
+    if (debugMode) {
+        guiElement.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+        guiElement.style.animation = 'pulse 1s infinite';
+    } else {
+        guiElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        guiElement.style.animation = 'none';
+    }
+}
+
+
+function claimCredits() {
+    if (!isScriptRunning) {
+        return;
+    }
+
+    const claimButton = document.querySelector('button[data-is-action-button="true"] span.css-e3l1on');
+    const moneyEmoji = document.querySelector('span.css-1qep1ct');
+
+    if (moneyEmoji) {
+        // The money emoji indicates that credits have been redeemed, so wait for the button.
+        removeOverlayElement();
+        updateGUI("Today's credits have been claimed. Waiting for the button to become available...");
+        setTimeout(claimCredits, 5000); // Adjust the wait time as needed
+    } else if (claimButton && claimButton.textContent.trim() === CLAIM_BUTTON_TEXT) {
+        if (debugMode) {
+            createOverlayElement();
+            updateGUI('Button found and can be clicked. Debug mode is active. Button not clicked.');
+        } else {
+            claimButton.click();
+            updateGUI('Credits claimed!');
+        }
+    } else {
+        removeOverlayElement();
+        updateGUI('Button not found or not available yet. Retrying in 5 seconds...');
+        setTimeout(claimCredits, 5000);
+    }
+}
+
+
+
+function handlePopupWindow() {
+    const popupWindow = document.querySelector('.popup-window');
+
+    if (popupWindow) {
+        const popupText = popupWindow.querySelector('.popup-text');
+        if (popupText && popupText.textContent.includes('Your credits were claimed successfully.')) {
+            const cancelButton = popupWindow.querySelector('a[href="#cancel"]');
+
+            if (cancelButton && cancelButton.textContent.trim() === 'No Thanks') {
+                cancelButton.click();
+                updateGUI('Popup window closed. Waiting for 24 hours before claiming credits again...');
+                setTimeout(claimCredits, 24 * 60 * 60 * 1000);
+            } else {
+                updateGUI('Cancel button not found in the popup window. Script stopped.');
+                stopScript();
+            }
+        } else {
+            updateGUI('Popup window found, but the expected text is not present. Script stopped.');
+            stopScript();
+        }
+    } else {
+        updateGUI('Popup window not found. Retrying in 1 second...');
+        setTimeout(function () {
+            handlePopupWindow();
+        }, 1000);
+    }
+}
+
+
+    function createGUI() {
+        createGUIElement();
+
+        const startStopButton = document.createElement('button');
+        startStopButton.textContent = 'Start/Stop';
+        startStopButton.style.marginBottom = '10px';
+        startStopButton.addEventListener('click', toggleScript);
+        guiElement.appendChild(startStopButton);
+
+        const debugModeToggle = document.createElement('input');
+        debugModeToggle.type = 'checkbox';
+        debugModeToggle.id = 'debug-mode-toggle';
+        debugModeToggle.checked = debugMode;
+        debugModeToggle.addEventListener('change', toggleDebugMode);
+
+        const debugModeLabel = document.createElement('label');
+        debugModeLabel.htmlFor = 'debug-mode-toggle';
+        debugModeLabel.textContent = 'Debug Mode';
+
+        guiElement.appendChild(debugModeToggle);
+        guiElement.appendChild(debugModeLabel);
+    }
+
+    function loadGUI() {
+        const existingGUI = document.getElementById('credit-claimer-gui');
+        if (existingGUI) {
+            guiElement = existingGUI;
+            updateGUI('Script is stopped.');
+        } else {
+            createGUI();
+            guiElement = document.getElementById('credit-claimer-gui');
+            updateGUI('Script is stopped.');
+        }
+    }
+
+    function saveScriptState() {
+        localStorage.setItem('creditClaimerState', JSON.stringify({
+            isScriptRunning: isScriptRunning,
+            debugMode: debugMode
+        }));
+    }
+
+    function loadScriptState() {
+        const storedState = localStorage.getItem('creditClaimerState');
+        if (storedState) {
+            const parsedState = JSON.parse(storedState);
+            isScriptRunning = parsedState.isScriptRunning;
+            debugMode = parsedState.debugMode;
+        }
+    }
+
+function reloadPageAndClaim() {
+        if (!isScriptRunning) {
+            return;
+        }
+
+    location.href = 'https://creator.nightcafe.studio/my-creations?claimTopup=true&n_class=topupReminder&n_medium=email';
+
+
+        // After redirecting, wait for a few seconds and then check for the button
+        setTimeout(function() {
+            claimCredits();
+        }, 5000); // Adjust the wait time as needed
+    }
+
+    function init() {
+        loadGUI();
+        loadScriptState();
+
+        // Start by claiming credits
+        if (isScriptRunning) {
+            claimCredits();
+        }
+
+        // Set up the periodic page reload
+        setInterval(function() {
+            if (isScriptRunning) {
+                reloadPageAndClaim();
+            }
+        }, REFRESH_INTERVAL);
+    }
+
+    window.addEventListener('beforeunload', saveScriptState);
+    init();
+})();
