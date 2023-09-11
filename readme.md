@@ -16,6 +16,12 @@ and auto claim your credits using tamper monkey
 
 ** my wallet address **
 
+
+coinbase wallet address 
+
+mrnobody314.cb.id
+
+
 eth: 0x3535E89F33DA8892857eCB925434444B24141F2a
 
 solana: 6d7Npf19vUrDWaMHWeHVEiXBcJXLHqgrUavtwEw4m3qt
