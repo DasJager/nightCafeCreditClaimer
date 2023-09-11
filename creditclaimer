@@ -149,19 +149,20 @@ function claimCredits() {
     const claimButton = document.querySelector('button[data-is-action-button="true"] span.css-e3l1on');
     const moneyEmoji = document.querySelector('span.css-1qep1ct');
 
-    if (moneyEmoji) {
-        // The money emoji indicates that credits have been redeemed, so wait for the button.
-        removeOverlayElement();
-        updateGUI("Today's credits have been claimed. Waiting for the button to become available...");
-        setTimeout(claimCredits, 5000); // Adjust the wait time as needed
-    } else if (claimButton && claimButton.textContent.trim() === CLAIM_BUTTON_TEXT) {
+    if (claimButton && claimButton.textContent.trim() === CLAIM_BUTTON_TEXT) {
         if (debugMode) {
             createOverlayElement();
             updateGUI('Button found and can be clicked. Debug mode is active. Button not clicked.');
         } else {
             claimButton.click();
-            updateGUI('Credits claimed!');
+            updateGUI('Credits claimed! Waiting for 24 hours before claiming again...');
+            setTimeout(claimCredits, 24 * 60 * 60 * 1000); // Wait for 24 hours
         }
+    } else if (moneyEmoji) {
+        // The money emoji indicates that credits have been redeemed, so wait for the button.
+        removeOverlayElement();
+        updateGUI("Today's credits have been claimed. Waiting for the button to become available waiting 24 hours or sooner...");
+        setTimeout(claimCredits, 5000); // Check again in 5 seconds
     } else {
         removeOverlayElement();
         updateGUI('Button not found or not available yet. Retrying in 5 seconds...');
