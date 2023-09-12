@@ -6,19 +6,23 @@
 // @author       You
 // @match        https://creator.nightcafe.studio/my-creations?claimTopup=true&n_class=topupReminder&n_medium=email
 // @grant        none
+// @require      https://cdnjs.cloudflare.com/ajax/libs/luxon/2.1.1/luxon.min.js
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
     const CLAIM_BUTTON_TEXT = 'Claim 5 credits';
-    const WAIT_TIME_HOURS = 24;
-    const REFRESH_INTERVAL = 24 * 60 * 60 * 1000;
+    const CST_REFRESH_HOUR = 19; // 7 PM in CST
 
     let guiElement;
     let overlayElement;
+    let countdownElement;
     let isScriptRunning = false;
     let debugMode = false;
+    const cstTimeZone = 'America/Chicago';
+    const luxonNow = luxon.DateTime.now().setZone(cstTimeZone);
+    let countdownInterval;
 
     function createGUIElement() {
         guiElement = document.createElement('div');
@@ -47,15 +51,44 @@
         textElement.style.textAlign = 'center';
         guiElement.appendChild(textElement);
 
+
+
         document.body.appendChild(guiElement);
     }
 
-    function updateGUI(content) {
+    function updateGUI(content, countdown) {
         const textElement = document.getElementById('credit-claimer-text');
-        if (textElement) {
-            textElement.textContent = content;
+        let countdownElement = document.getElementById('countdown-timer'); // Get the countdown element
+
+        try {
+            if (!countdownElement) {
+                // If the countdown element doesn't exist, create it
+                countdownElement = document.createElement('div');
+                countdownElement.id = 'countdown-timer';
+                countdownElement.style.textAlign = 'center';
+                countdownElement.style.marginTop = '30px';
+                countdownElement.style.backgroundColor = 'red';
+                countdownElement.style.color = 'white';
+                guiElement.appendChild(countdownElement);
+                console.log('Countdown element created.');
+            }
+
+            if (textElement) {
+                textElement.textContent = content;
+                console.log('Content updated:', content);
+            }
+
+            if (countdownElement) {
+                countdownElement.textContent = countdown || ''; // Update the countdown text
+                console.log('Countdown updated:', countdown || 'No countdown provided.');
+            }
+        } catch (error) {
+            console.error('Error updating GUI:', error);
         }
     }
+
+
+
 
     function dragStart(e) {
         const initialX = e.clientX;
@@ -83,7 +116,7 @@
     }
 
     function createOverlayElement() {
-        const claimButton = document.querySelector('button[data-is-action-button="true"] .css-30u4z5');
+        const claimButton = document.querySelector('button[data-is-action-button="true"] span.css-e3l1on');
         if (claimButton) {
             overlayElement = document.createElement('div');
             overlayElement.style.position = 'absolute';
@@ -127,78 +160,77 @@
         updateGUI('Script is stopped.');
     }
 
-function toggleDebugMode() {
-    debugMode = !debugMode; // Invert the value of debugMode
-    updateGUI(`Debug mode: ${debugMode ? 'Enabled' : 'Disabled'}`);
+    function toggleDebugMode() {
+        debugMode = !debugMode;
+        updateGUI(`Debug mode: ${debugMode ? 'Enabled' : 'Disabled'}`);
 
-    if (debugMode) {
-        guiElement.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
-        guiElement.style.animation = 'pulse 1s infinite';
-    } else {
-        guiElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-        guiElement.style.animation = 'none';
-    }
-}
-
-
-function claimCredits() {
-    if (!isScriptRunning) {
-        return;
-    }
-
-    const claimButton = document.querySelector('button[data-is-action-button="true"] span.css-e3l1on');
-    const moneyEmoji = document.querySelector('span.css-1qep1ct');
-
-    if (claimButton && claimButton.textContent.trim() === CLAIM_BUTTON_TEXT) {
         if (debugMode) {
-            createOverlayElement();
-            updateGUI('Button found and can be clicked. Debug mode is active. Button not clicked.');
+            guiElement.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+            guiElement.style.animation = 'pulse 1s infinite';
         } else {
-            claimButton.click();
-            updateGUI('Credits claimed! Waiting for 24 hours before claiming again...');
-            setTimeout(claimCredits, 24 * 60 * 60 * 1000); // Wait for 24 hours
+            guiElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            guiElement.style.animation = 'none';
         }
-    } else if (moneyEmoji) {
-        // The money emoji indicates that credits have been redeemed, so wait for the button.
-        removeOverlayElement();
-        updateGUI("Today's credits have been claimed. Waiting for the button to become available waiting 24 hours or sooner...");
-        setTimeout(claimCredits, 5000); // Check again in 5 seconds
-    } else {
-        removeOverlayElement();
-        updateGUI('Button not found or not available yet. Retrying in 5 seconds...');
-        setTimeout(claimCredits, 5000);
     }
-}
+    function claimCredits() {
+        if (!isScriptRunning) {
+            return;
+        }
 
+        const claimButton = document.querySelector('button[data-is-action-button="true"] span.css-e3l1on');
+        const moneyEmoji = document.querySelector('span.css-1qep1ct');
 
+        // Use Luxon to get the current time in CST
+        const luxonNow = luxon.DateTime.now().setZone(cstTimeZone);
 
-function handlePopupWindow() {
-    const popupWindow = document.querySelector('.popup-window');
+        // Get the current hour, minute, and second in CST
+        const currentHour = luxonNow.hour;
+        const currentMinutes = luxonNow.minute;
+        const currentSeconds = luxonNow.second;
 
-    if (popupWindow) {
-        const popupText = popupWindow.querySelector('.popup-text');
-        if (popupText && popupText.textContent.includes('Your credits were claimed successfully.')) {
-            const cancelButton = popupWindow.querySelector('a[href="#cancel"]');
+        console.log(`Current time in CST: ${currentHour}:${currentMinutes}:${currentSeconds}`);
 
-            if (cancelButton && cancelButton.textContent.trim() === 'No Thanks') {
-                cancelButton.click();
-                updateGUI('Popup window closed. Waiting for 24 hours before claiming credits again...');
-                setTimeout(claimCredits, 24 * 60 * 60 * 1000);
+        if (claimButton && claimButton.textContent.trim() === CLAIM_BUTTON_TEXT) {
+            if (debugMode) {
+                createOverlayElement();
+                updateGUI('Button found and can be clicked. Debug mode is active. Button not clicked.');
             } else {
-                updateGUI('Cancel button not found in the popup window. Script stopped.');
-                stopScript();
+                claimButton.click();
+
+                // Calculate the time until 7 PM CST in milliseconds
+                const cstRefreshTime = luxonNow.set({ hour: CST_REFRESH_HOUR, minute: 0, second: 0, millisecond: 0 });
+                const timeUntilRefresh = cstRefreshTime - luxonNow;
+
+                // Update the countdown timer
+                countdownInterval = setInterval(function () {
+                    const timeUntilRefresh = cstRefreshTime - luxon.DateTime.now().setZone(cstTimeZone); // Calculate time difference in milliseconds
+                    if (timeUntilRefresh <= 0) {
+                        clearInterval(countdownInterval);
+                        updateGUI('Credits claimed! Waiting until 7 PM CST or sooner before claiming again...', '00:00:00');
+                        setTimeout(claimCredits, 1000); // Claim again after a 1-second delay
+                    } else {
+                        // Format the countdown time in hours, minutes, and seconds
+                        const hours = Math.floor(timeUntilRefresh / (60 * 60 * 1000));
+                        const minutes = Math.floor((timeUntilRefresh % (60 * 60 * 1000)) / (60 * 1000));
+                        const seconds = Math.floor((timeUntilRefresh % (60 * 1000)) / 1000);
+                        const formattedCountdown = `${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+
+                        // Update the GUI with the formatted countdown
+                        updateGUI('Credits claimed! Waiting until 7 PM CST or sooner before claiming again...', formattedCountdown);
+                    }
+                }, 1000);
             }
+        } else if (moneyEmoji) {
+            // The money emoji indicates that credits have been redeemed, so wait for the button.
+            removeOverlayElement();
+            updateGUI("Today's credits have been claimed. Waiting until 7 PM CST or sooner for the button to become available...");
+            setTimeout(claimCredits, 5000); // Check again in 5 seconds
         } else {
-            updateGUI('Popup window found, but the expected text is not present. Script stopped.');
-            stopScript();
+            removeOverlayElement();
+            updateGUI('Button not found or not available yet. Retrying in 5 seconds...');
+            setTimeout(claimCredits, 5000);
         }
-    } else {
-        updateGUI('Popup window not found. Retrying in 1 second...');
-        setTimeout(function () {
-            handlePopupWindow();
-        }, 1000);
     }
-}
 
 
     function createGUI() {
@@ -252,35 +284,13 @@ function handlePopupWindow() {
         }
     }
 
-function reloadPageAndClaim() {
-        if (!isScriptRunning) {
-            return;
-        }
-
-    location.href = 'https://creator.nightcafe.studio/my-creations?claimTopup=true&n_class=topupReminder&n_medium=email';
-
-
-        // After redirecting, wait for a few seconds and then check for the button
-        setTimeout(function() {
-            claimCredits();
-        }, 5000); // Adjust the wait time as needed
-    }
-
     function init() {
         loadGUI();
         loadScriptState();
 
-        // Start by claiming credits
         if (isScriptRunning) {
             claimCredits();
         }
-
-        // Set up the periodic page reload
-        setInterval(function() {
-            if (isScriptRunning) {
-                reloadPageAndClaim();
-            }
-        }, REFRESH_INTERVAL);
     }
 
     window.addEventListener('beforeunload', saveScriptState);
