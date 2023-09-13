@@ -1,6 +1,20 @@
 **Warning this may or may not get your account banned although this is automation it should not violate their terms so grey area use with caution also I am not responsible for any damages or loss!!! 
 
 
+Email from nightCafe! 
+
+Hi, thanks for reaching out to ask about this.
+
+Scripts are prohibited because they are generally used for automating activities that cost us money.
+
+Your script sounds relatively harmless, however you may get blocked by bot detection measures at some point, and flagged for review.
+
+As long as you don't expand the capabilities of your script, we won't take any action specifically against your account (though we are always implementing general bot protection measures that may one day prevent your script from working). 
+
+Thanks,
+Angus
+
+
 ** NightCafe Credit Claimer **
 
 head over to https://creator.nightcafe.studio/my-creations?claimTopup=true&n_class=topupReminder&n_medium=email
