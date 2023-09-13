@@ -1,1 +1,271 @@
-Shit be straight broken I will update when I fix it completely 
+// ==UserScript==
+// @name         Credit Claimer
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  Claim free daily credits automatically.
+// @author       You
+// @match        https://creator.nightcafe.studio/my-creations?claimTopup=true&n_class=topupReminder&n_medium=email
+// @grant        none
+// @require      https://cdnjs.cloudflare.com/ajax/libs/luxon/2.1.1/luxon.min.js
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    const CLAIM_BUTTON_TEXT = 'Claim 5 credits';
+    const CST_REFRESH_HOUR = 19;
+    const CST_REFRESH_MINUTE = 0;
+
+
+    let guiElement;
+    let countdownElement;
+    let isScriptRunning = false;
+    const cstTimeZone = 'America/Chicago';
+    const luxonNow = luxon.DateTime.now().setZone(cstTimeZone);
+    let countdownInterval;
+
+    function createGUIElement() {
+        guiElement = document.createElement('div');
+        guiElement.id = 'credit-claimer-gui';
+        guiElement.style.position = 'fixed';
+        guiElement.style.top = '50%';
+        guiElement.style.left = '50%';
+        guiElement.style.transform = 'translate(-50%, -50%)';
+        guiElement.style.padding = '10px';
+        guiElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        guiElement.style.color = '#fff';
+        guiElement.style.zIndex = '9999';
+        guiElement.style.fontFamily = 'Arial, sans-serif';
+        guiElement.style.fontSize = '14px';
+        guiElement.style.borderRadius = '5px';
+        guiElement.style.display = 'flex';
+        guiElement.style.flexDirection = 'column';
+        guiElement.style.alignItems = 'center';
+        guiElement.style.userSelect = 'none';
+        guiElement.style.cursor = 'move';
+        guiElement.addEventListener('mousedown', dragStart);
+
+        const textElement = document.createElement('div');
+        textElement.id = 'credit-claimer-text';
+        textElement.style.marginBottom = '10px';
+        textElement.style.textAlign = 'center';
+        guiElement.appendChild(textElement);
+
+        document.body.appendChild(guiElement);
+    }
+    function refreshPage() {
+        location.reload();
+    }
+    function updateGUI(content) {
+        const textElement = document.getElementById('credit-claimer-text');
+        let countdownElement = document.getElementById('countdown-timer'); // Get the countdown element
+
+        try {
+            if (!countdownElement) {
+                // If the countdown element doesn't exist, create it
+                countdownElement = document.createElement('div');
+                countdownElement.id = 'countdown-timer';
+                countdownElement.style.textAlign = 'center';
+                countdownElement.style.marginTop = '30px';
+                countdownElement.style.backgroundColor = 'red';
+                countdownElement.style.color = 'white';
+                guiElement.appendChild(countdownElement);
+                console.log('Countdown element created.');
+            }
+
+            if (textElement) {
+                textElement.textContent = content;
+                console.log('Content updated:', content);
+            }
+
+            if (countdownElement) {
+                const luxonNow = luxon.DateTime.now().setZone(cstTimeZone);
+                const cstRefreshTime = luxonNow.set({
+                    hour: CST_REFRESH_HOUR,
+                    minute: CST_REFRESH_MINUTE,
+                    second: 0,
+                    millisecond: 0
+                });
+
+                // Calculate the time until the specified time (CST_REFRESH_HOUR and CST_REFRESH_MINUTE)
+                const timeUntilRefresh = cstRefreshTime - luxonNow;
+
+                if (timeUntilRefresh <= 0) {
+                    // It's past the specified time, so calculate the time until the next day at the specified time
+                    const nextClaimTime = cstRefreshTime.plus({ days: 1 }); // Set it for the next day
+                    const timeUntilNextRefresh = nextClaimTime - luxonNow;
+                    const hours = Math.floor(timeUntilNextRefresh / (60 * 60 * 1000));
+                    const minutes = Math.floor((timeUntilNextRefresh % (60 * 60 * 1000)) / (60 * 1000));
+                    const seconds = Math.floor((timeUntilNextRefresh % (60 * 1000)) / 1000);
+                    const formattedCountdown = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                    countdownElement.textContent = formattedCountdown; // Update the countdown text
+                    console.log('Countdown updated:', formattedCountdown);
+                } else {
+                    // It's before the specified time, so calculate the time until the specified time
+                    const hours = Math.floor(timeUntilRefresh / (60 * 60 * 1000));
+                    const minutes = Math.floor((timeUntilRefresh % (60 * 60 * 1000)) / (60 * 1000));
+                    const seconds = Math.floor((timeUntilRefresh % (60 * 1000)) / 1000);
+                    const formattedCountdown = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                    countdownElement.textContent = formattedCountdown; // Update the countdown text
+                    console.log('Countdown updated:', formattedCountdown);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating GUI:', error);
+        }
+    }
+
+
+
+
+    function dragStart(e) {
+        const initialX = e.clientX;
+        const initialY = e.clientY;
+        const initialTop = parseInt(window.getComputedStyle(guiElement).top);
+        const initialLeft = parseInt(window.getComputedStyle(guiElement).left);
+
+        function drag(e) {
+            const currentX = e.clientX;
+            const currentY = e.clientY;
+            const offsetX = currentX - initialX;
+            const offsetY = currentY - initialY;
+
+            guiElement.style.top = `${initialTop + offsetY}px`;
+            guiElement.style.left = `${initialLeft + offsetX}px`;
+        }
+
+        function dragEnd() {
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+    }
+
+
+    function toggleScript() {
+        if (isScriptRunning) {
+            stopScript();
+        } else {
+            startScript();
+        }
+    }
+
+    function startScript() {
+        if (isScriptRunning) {
+            return;
+        }
+
+        isScriptRunning = true;
+        updateGUI('Script is running...');
+        claimCredits();
+    }
+
+    function stopScript() {
+        isScriptRunning = false;
+        updateGUI('Script is stopped.');
+    }
+
+
+    function claimCredits() {
+        if (!isScriptRunning) {
+            console.log('Script is not running. Exiting...');
+            return;
+        }
+
+        const claimButton = document.querySelector('button[data-is-action-button="true"] span.css-e3l1on');
+        const moneyEmoji = document.querySelector('span.css-1qep1ct');
+
+        // Use Luxon to get the current time in CST
+        const luxonNow = luxon.DateTime.now().setZone(cstTimeZone);
+
+        // Get the current hour and minute in CST
+        const currentHour = luxonNow.hour;
+        const currentMinutes = luxonNow.minute;
+
+        console.log(`Current time in CST: ${currentHour}:${currentMinutes}`);
+
+        if (claimButton && claimButton.textContent.trim() === CLAIM_BUTTON_TEXT) {
+            console.log('Clicking the claim button...');
+            claimButton.click();
+
+        } else if (moneyEmoji) {
+            console.log("Today's credits have been claimed. Waiting until 7:00 PM CST for the button to become available...");
+            // The money emoji indicates that credits have been redeemed, so wait for the button.
+            updateGUI("Today's credits have been claimed. Waiting until 7:00 PM CST for the button to become available...", false); // Add false flag to indicate no page refresh
+            setTimeout(claimCredits, 5000); // Check again in 5 seconds
+        } else {
+            console.log(`Button not found or not available yet. Retrying in 5 seconds...`);
+            updateGUI('Button not found or not available yet. Retrying in 5 seconds...', false); // Add false flag to indicate no page refresh
+            setTimeout(claimCredits, 5000);
+        }
+    }
+
+
+
+
+
+
+
+
+
+    function createGUI() {
+        createGUIElement();
+
+        const startStopButton = document.createElement('button');
+        startStopButton.textContent = 'Start/Stop';
+        startStopButton.style.marginBottom = '10px';
+        startStopButton.addEventListener('click', toggleScript);
+        guiElement.appendChild(startStopButton);
+
+        const refreshButton = document.createElement('button');
+        refreshButton.textContent = 'REFRESH PAGE!!!!';
+        refreshButton.id = 'refresh-button';
+        refreshButton.style.marginBottom = '10px';
+        refreshButton.addEventListener('click', refreshPage);
+        guiElement.appendChild(refreshButton);
+
+    }
+
+    function loadGUI() {
+        const existingGUI = document.getElementById('credit-claimer-gui');
+        if (existingGUI) {
+            guiElement = existingGUI;
+            updateGUI('Script is stopped.');
+        } else {
+            createGUI();
+            guiElement = document.getElementById('credit-claimer-gui');
+            updateGUI('Script is stopped.');
+        }
+    }
+
+    function saveScriptState() {
+        localStorage.setItem('creditClaimerState', JSON.stringify({
+            isScriptRunning: isScriptRunning,
+
+        }));
+    }
+
+    function loadScriptState() {
+        const storedState = localStorage.getItem('creditClaimerState');
+        if (storedState) {
+            const parsedState = JSON.parse(storedState);
+            isScriptRunning = parsedState.isScriptRunning;
+        }
+    }
+
+    function init() {
+        loadGUI();
+        loadScriptState();
+
+        if (isScriptRunning) {
+            claimCredits();
+        }
+    }
+
+    window.addEventListener('beforeunload', saveScriptState);
+    init();
+})();
