@@ -230,23 +230,50 @@ function updateGUI(content) {
 
 
 
-    function createGUI() {
-        createGUIElement();
+function createGUI() {
+    createGUIElement();
 
-        const startStopButton = document.createElement('button');
-        startStopButton.textContent = 'Start/Stop';
-        startStopButton.style.marginBottom = '10px';
-        startStopButton.addEventListener('click', toggleScript);
-        guiElement.appendChild(startStopButton);
+    const startStopButton = document.createElement('button');
+    startStopButton.textContent = 'Start/Stop';
+    startStopButton.style.marginBottom = '10px';
+    startStopButton.addEventListener('click', toggleScript);
+    guiElement.appendChild(startStopButton);
 
-        const refreshButton = document.createElement('button');
-        refreshButton.textContent = 'REFRESH PAGE!!!!';
-        refreshButton.id = 'refresh-button';
-        refreshButton.style.marginBottom = '10px';
-        refreshButton.addEventListener('click', refreshPage);
-        guiElement.appendChild(refreshButton);
+    const refreshButton = document.createElement('button');
+    refreshButton.textContent = 'REFRESH PAGE!!!!';
+    refreshButton.id = 'refresh-button';
+    refreshButton.style.marginBottom = '10px';
+    refreshButton.addEventListener('click', refreshPage);
+    guiElement.appendChild(refreshButton);
 
+
+    const donateText = document.createElement('p');
+    donateText.textContent = 'If you love this script or it has been helpful please consider donating';
+    donateText.style.marginBottom = '19px';
+    guiElement.appendChild(donateText);
+    // Donation section
+    const donationHeader = document.createElement('h3');
+    donationHeader.style.marginTop = '20px';
+    guiElement.appendChild(donationHeader);
+
+    function createAddressInput(labelText, address) {
+        const label = document.createElement('label');
+        label.textContent = labelText + ': ';
+        const input = document.createElement('input');
+        input.value = address;
+        input.readOnly = true;
+        input.style.width = '100%';
+        label.appendChild(input);
+        guiElement.appendChild(label);
+        guiElement.appendChild(document.createElement('br'));
     }
+
+    createAddressInput('Coinbase Wallet Address', 'mrnobody314.cb.id');
+    createAddressInput('ETH', '0x3535E89F33DA8892857eCB925434444B24141F2a');
+    createAddressInput('Solana', '6d7Npf19vUrDWaMHWeHVEiXBcJXLHqgrUavtwEw4m3qt');
+    createAddressInput('Doge', 'D5H4ADNWcn1HaPpR5sizZuBX72HpMjvLeC');
+}
+
 
     function loadGUI() {
         const existingGUI = document.getElementById('credit-claimer-gui');
