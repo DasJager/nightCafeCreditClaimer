@@ -1,4 +1,8 @@
-This script is not fully automated I have been pulling my hair out for hours to figure out how to make it refresh exactly at 7PM CST but I did implement a timer which is cool and a button for refresh lol enjoy I hope either one day I can finish this for full automation or someone else can
+This script is now fully automated!!!!!!!!! 
+
+HECK YAH! I got the auto refresh working after a long headache and debugging latter when the timer reaches 0 It will refresh the page so at exactly 7PM CST or what ever time is set here it will refresh when the timer hits zero 
+    const CST_REFRESH_HOUR = 19;
+    const CST_REFRESH_MINUTE = 0; 
 
 
 **Warning this may or may not get your account banned although this is automation it should not violate their terms so grey area use with caution also I am not responsible for any damages or loss!!! 
