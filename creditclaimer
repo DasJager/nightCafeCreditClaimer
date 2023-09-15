@@ -56,66 +56,84 @@
     function refreshPage() {
         location.reload();
     }
-    function updateGUI(content) {
-        const textElement = document.getElementById('credit-claimer-text');
-        let countdownElement = document.getElementById('countdown-timer'); // Get the countdown element
+let refreshScheduled = false;
 
-        try {
-            if (!countdownElement) {
-                // If the countdown element doesn't exist, create it
-                countdownElement = document.createElement('div');
-                countdownElement.id = 'countdown-timer';
-                countdownElement.style.textAlign = 'center';
-                countdownElement.style.marginTop = '30px';
-                countdownElement.style.backgroundColor = 'red';
-                countdownElement.style.color = 'white';
-                guiElement.appendChild(countdownElement);
-                console.log('Countdown element created.');
-            }
 
-            if (textElement) {
-                textElement.textContent = content;
-                console.log('Content updated:', content);
-            }
 
-            if (countdownElement) {
-                const luxonNow = luxon.DateTime.now().setZone(cstTimeZone);
-                const cstRefreshTime = luxonNow.set({
-                    hour: CST_REFRESH_HOUR,
-                    minute: CST_REFRESH_MINUTE,
-                    second: 0,
-                    millisecond: 0
-                });
+function updateGUI(content) {
+    const textElement = document.getElementById('credit-claimer-text');
+    let countdownElement = document.getElementById('countdown-timer'); // Get the countdown element
 
-                // Calculate the time until the specified time (CST_REFRESH_HOUR and CST_REFRESH_MINUTE)
-                const timeUntilRefresh = cstRefreshTime - luxonNow;
-
-                if (timeUntilRefresh <= 0) {
-                    // It's past the specified time, so calculate the time until the next day at the specified time
-                    const nextClaimTime = cstRefreshTime.plus({ days: 1 }); // Set it for the next day
-                    const timeUntilNextRefresh = nextClaimTime - luxonNow;
-                    const hours = Math.floor(timeUntilNextRefresh / (60 * 60 * 1000));
-                    const minutes = Math.floor((timeUntilNextRefresh % (60 * 60 * 1000)) / (60 * 1000));
-                    const seconds = Math.floor((timeUntilNextRefresh % (60 * 1000)) / 1000);
-                    const formattedCountdown = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
-                    countdownElement.textContent = formattedCountdown; // Update the countdown text
-                    console.log('Countdown updated:', formattedCountdown);
-                } else {
-                    // It's before the specified time, so calculate the time until the specified time
-                    const hours = Math.floor(timeUntilRefresh / (60 * 60 * 1000));
-                    const minutes = Math.floor((timeUntilRefresh % (60 * 60 * 1000)) / (60 * 1000));
-                    const seconds = Math.floor((timeUntilRefresh % (60 * 1000)) / 1000);
-                    const formattedCountdown = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
-                    countdownElement.textContent = formattedCountdown; // Update the countdown text
-                    console.log('Countdown updated:', formattedCountdown);
-                }
-            }
-        } catch (error) {
-            console.error('Error updating GUI:', error);
+    try {
+        if (!countdownElement) {
+            // If the countdown element doesn't exist, create it
+            countdownElement = document.createElement('div');
+            countdownElement.id = 'countdown-timer';
+            countdownElement.style.textAlign = 'center';
+            countdownElement.style.marginTop = '30px';
+            countdownElement.style.backgroundColor = 'red';
+            countdownElement.style.color = 'white';
+            guiElement.appendChild(countdownElement);
+            console.log('Countdown element created.');
         }
+
+        if (textElement) {
+            textElement.textContent = content;
+            console.log('Content updated:', content);
+        }
+
+        if (countdownElement) {
+            const luxonNow = luxon.DateTime.now().setZone(cstTimeZone);
+            const cstRefreshTime = luxonNow.set({
+                hour: CST_REFRESH_HOUR,
+                minute: CST_REFRESH_MINUTE,
+                second: 0,
+                millisecond: 0
+            });
+
+            const timeUntilRefresh = cstRefreshTime - luxonNow;
+            let refreshDuration;
+
+            if (timeUntilRefresh <= 0) {
+                const nextClaimTime = cstRefreshTime.plus({ days: 1 });
+                refreshDuration = nextClaimTime - luxonNow;
+
+                const hours = Math.floor(refreshDuration / (60 * 60 * 1000));
+                const minutes = Math.floor((refreshDuration % (60 * 60 * 1000)) / (60 * 1000));
+                const seconds = Math.floor((refreshDuration % (60 * 1000)) / 1000);
+                const formattedCountdown = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                countdownElement.textContent = formattedCountdown;
+                console.log('Countdown updated:', formattedCountdown);
+            } else {
+                refreshDuration = timeUntilRefresh;
+
+                const hours = Math.floor(refreshDuration / (60 * 60 * 1000));
+                const minutes = Math.floor((refreshDuration % (60 * 60 * 1000)) / (60 * 1000));
+                const seconds = Math.floor((refreshDuration % (60 * 1000)) / 1000);
+                const formattedCountdown = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                countdownElement.textContent = formattedCountdown;
+                console.log('Countdown updated:', formattedCountdown);
+            }
+
+            if (refreshDuration > 0 && !refreshScheduled) {
+                console.log('Setting timeout for refresh...');
+                setTimeout(refreshPage, refreshDuration);
+                refreshScheduled = true;
+            } else if (refreshScheduled) {
+                console.log('Refresh already scheduled.');
+            } else {
+                console.log('Unexpected time value. Not setting refresh.');
+            }
+        }
+    } catch (error) {
+        console.error('Error updating GUI:', error);
     }
+}
+
+
+
 
 
 
