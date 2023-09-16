@@ -271,9 +271,20 @@ function createGUI() {
     refreshButton.addEventListener('click', refreshPage);
     guiElement.appendChild(refreshButton);
 
+    // Adding "Have an issue" button and text
+    const issueButton = document.createElement('button');
+    issueButton.textContent = 'Have an issue CLICK ME!';
+    issueButton.addEventListener('click', () => {
+        window.open('https://github.com/DasJager/nightCafeCreditClaimer/issues', '_blank');
+    });
+    guiElement.appendChild(issueButton);
+
+    const issueText = document.createElement('p');
+    issueText.textContent = 'If there are any errors or issues, please let us know.';
+    guiElement.appendChild(issueText);
 
     const donateText = document.createElement('p');
-    donateText.textContent = 'If you love this script or it has been helpful please consider donating';
+    donateText.textContent = 'If you love this script or it has been helpful, please consider donating';
     donateText.style.marginBottom = '19px';
     guiElement.appendChild(donateText);
     // Donation section
@@ -298,6 +309,7 @@ function createGUI() {
     createAddressInput('Solana', '6d7Npf19vUrDWaMHWeHVEiXBcJXLHqgrUavtwEw4m3qt');
     createAddressInput('Doge', 'D5H4ADNWcn1HaPpR5sizZuBX72HpMjvLeC');
 }
+
 
 
     function loadGUI() {
