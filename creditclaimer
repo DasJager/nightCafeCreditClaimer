@@ -132,7 +132,32 @@ function updateGUI(content) {
     }
 }
 
+let lastCheckedTime = null;
 
+setInterval(() => {
+    const countdownElement = document.getElementById('countdown-timer');
+    if (countdownElement) {
+        const currentTime = countdownElement.textContent;
+        if (currentTime === lastCheckedTime) {
+            console.log("Timer is stuck at:", currentTime);
+            restartScript();
+        } else {
+            console.log("Timer is running fine. Current time:", currentTime);
+            lastCheckedTime = currentTime;
+        }
+    } else {
+        console.log("Countdown timer not found on the page.");
+    }
+}, 5000);
+
+
+function restartScript() {
+    console.log("Restarting script due to timer issue...");
+
+    // Reset any relevant state or variables
+    stopScript();
+    startScript();
+}
 
 
 
